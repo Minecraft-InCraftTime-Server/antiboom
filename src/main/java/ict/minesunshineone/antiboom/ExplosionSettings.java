@@ -175,8 +175,7 @@ public final class ExplosionSettings {
                 "MANGROVE_BOAT",
                 "CHERRY_BOAT",
                 "BAMBOO_RAFT",
-                "BAMBOO_BOAT",
-                "RAFT");
+                "BAMBOO_BOAT");
 
         registerAliases(aliases, EntityType.CHEST_BOAT,
                 "OAK_CHEST_BOAT",
@@ -187,9 +186,7 @@ public final class ExplosionSettings {
                 "DARK_OAK_CHEST_BOAT",
                 "MANGROVE_CHEST_BOAT",
                 "CHERRY_CHEST_BOAT",
-                "BAMBOO_RAFT_WITH_CHEST",
-                "BAMBOO_CHEST_BOAT",
-                "RAFT_WITH_CHEST");
+                "BAMBOO_CHEST_RAFT");
 
         return Map.copyOf(aliases);
     }
