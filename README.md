@@ -31,30 +31,30 @@ mvn clean package
 # 三种模式：'protect'（阻止破坏）、'allow'（允许）、'firework'（烟花效果 + 阻止破坏）
 
 explosions:
-	creeper: 'firework'
-	ghast-fireball: 'firework'
-	ender-dragon: 'protect'
+  creeper: 'firework'
+  ghast-fireball: 'firework'
+  ender-dragon: 'protect'
 
 explosion-protection:
-	enabled: true
-	entities:
-		painting: true
-		armor_stand: true
-		item_frame: true
-		glow_item_frame: true
-		# 船类支持 `oak_boat`、`oak_chest_boat`、`bamboo_raft` 等别名
-		boat: true
-		leash_knot: true
+  enabled: true
+  entities:
+    painting: true
+    armor_stand: true
+    item_frame: true
+    glow_item_frame: true
+    # 船类支持 `oak_boat`、`oak_chest_boat`、`bamboo_raft` 等别名
+    boat: true
+    leash_knot: true
 
 wind-charge-protection:
-	enabled: true
-	entities:
-		painting: true
-		armor_stand: true
-		item_frame: true
-		glow_item_frame: true
-		boat: true
-		leash_knot: true
+  enabled: true
+  entities:
+    painting: true
+    armor_stand: true
+    item_frame: true
+    glow_item_frame: true
+    boat: true
+    leash_knot: true
 ```
 
 > 未列出的实体默认遵循 Bukkit 行为；若 `entities` 留空且 `enabled: true`，插件将使用内置默认保护清单。
