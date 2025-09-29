@@ -3,9 +3,7 @@ package ict.minesunshineone.antiboom.listener;
 import ict.minesunshineone.antiboom.service.ExplosionProtectionService;
 import ict.minesunshineone.antiboom.service.WindChargeProtectionService;
 import org.bukkit.entity.Breeze;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Hanging;
 import org.bukkit.entity.WindCharge;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -58,46 +56,29 @@ public final class CustomEntityProtectionListener implements Listener {
 
         RemoveCause cause = event.getCause();
 
-        if (cause == RemoveCause.EXPLOSION) {
-            if (explosionProtectionService.isExplosionProtectionEnabled()
-                    && explosionProtectionService.isExplosionProtectedEntity(type)) {
-                event.setCancelled(true);
-                return;
-            }
-
-            if (shouldCancelForWindCharge(event.getEntity(), type)) {
-                event.setCancelled(true);
-                return;
-            }
+        if (cause == RemoveCause.EXPLOSION
+                && explosionProtectionService.isExplosionProtectionEnabled()
+                && explosionProtectionService.isExplosionProtectedEntity(type)) {
+            event.setCancelled(true);
+            return;
         }
 
         if (cause == RemoveCause.ENTITY && event instanceof HangingBreakByEntityEvent byEntity) {
-            Entity remover = byEntity.getRemover();
-            if (remover instanceof WindCharge || remover instanceof Breeze) {
+            if (byEntity.getRemover() instanceof WindCharge || byEntity.getRemover() instanceof Breeze) {
                 if (windChargeProtectionService.isProtectionEnabled()
                         && windChargeProtectionService.isProtectedEntity(type)) {
-                    windChargeProtectionService.recordImpact(event.getEntity().getLocation());
                     event.setCancelled(true);
                     return;
                 }
+
+                // Wind Charge also pushes without removing cause when item frame is empty; ensure protection applies.
+                if (type == EntityType.ITEM_FRAME || type == EntityType.GLOW_ITEM_FRAME) {
+                    if (windChargeProtectionService.isProtectionEnabled()
+                            && windChargeProtectionService.isProtectedEntity(type)) {
+                        event.setCancelled(true);
+                    }
+                }
             }
         }
-
-        if ((cause == RemoveCause.PHYSICS || cause == RemoveCause.OBSTRUCTION)
-                && shouldCancelForWindCharge(event.getEntity(), type)) {
-            event.setCancelled(true);
-        }
-    }
-
-    private boolean shouldCancelForWindCharge(Hanging hanging, EntityType type) {
-        if (!windChargeProtectionService.isProtectionEnabled()) {
-            return false;
-        }
-
-        if (!windChargeProtectionService.isProtectedEntity(type)) {
-            return false;
-        }
-
-        return windChargeProtectionService.wasRecentImpact(hanging.getLocation());
     }
 }

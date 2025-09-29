@@ -18,7 +18,6 @@ import org.bukkit.entity.Fireball;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.Ghast;
 import org.bukkit.entity.Hanging;
-import org.bukkit.entity.WindCharge;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
@@ -39,13 +38,6 @@ public final class ExplosionProtectionService {
                                  Location location,
                                  List<?> affectedBlocks,
                                  Consumer<Float> yieldSetter) {
-        if (source instanceof WindCharge && location != null) {
-            WindChargeProtectionService windService = plugin.getWindChargeProtectionService();
-            if (windService != null) {
-                windService.recordImpact(location);
-            }
-        }
-
         filterAttachedSupportBlocks(location, affectedBlocks);
         ProtectionMode mode = resolveMode(source);
         applyMode(mode, location, affectedBlocks, yieldSetter, source);
