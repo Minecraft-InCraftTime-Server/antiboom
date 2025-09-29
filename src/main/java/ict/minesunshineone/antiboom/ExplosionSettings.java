@@ -12,6 +12,8 @@ import org.bukkit.entity.Ghast;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -27,6 +29,8 @@ public final class ExplosionSettings {
             EntityType.BOAT,
             EntityType.LEASH_KNOT
     );
+
+    private static final Map<String, EntityType> ENTITY_ALIASES = createEntityAliases();
 
     private final Map<ExplosionSource, ProtectionMode> explosionModes;
     private final boolean customEntityProtectionEnabled;
@@ -126,15 +130,67 @@ public final class ExplosionSettings {
 
         Map<EntityType, Boolean> values = new EnumMap<>(EntityType.class);
         for (String key : section.getKeys(false)) {
-            try {
-                EntityType type = EntityType.valueOf(key.toUpperCase());
+            EntityType type = resolveEntityType(key);
+            if (type != null) {
                 values.put(type, section.getBoolean(key));
-            } catch (IllegalArgumentException ignored) {
-                // Unknown entity type, skip silently.
             }
         }
 
         return values;
+    }
+
+    private static EntityType resolveEntityType(String key) {
+        String normalized = normalizeKey(key);
+        try {
+            return EntityType.valueOf(normalized);
+        } catch (IllegalArgumentException ignored) {
+            return ENTITY_ALIASES.get(normalized);
+        }
+    }
+
+    private static String normalizeKey(String key) {
+        return key.trim()
+                .toUpperCase(Locale.ROOT)
+                .replace('-', '_')
+                .replace(' ', '_');
+    }
+
+    private static Map<String, EntityType> createEntityAliases() {
+        Map<String, EntityType> aliases = new HashMap<>();
+
+        registerAliases(aliases, EntityType.BOAT,
+                "OAK_BOAT",
+                "SPRUCE_BOAT",
+                "BIRCH_BOAT",
+                "JUNGLE_BOAT",
+                "ACACIA_BOAT",
+                "DARK_OAK_BOAT",
+                "MANGROVE_BOAT",
+                "CHERRY_BOAT",
+                "BAMBOO_RAFT",
+                "BAMBOO_BOAT",
+                "RAFT");
+
+        registerAliases(aliases, EntityType.CHEST_BOAT,
+                "OAK_CHEST_BOAT",
+                "SPRUCE_CHEST_BOAT",
+                "BIRCH_CHEST_BOAT",
+                "JUNGLE_CHEST_BOAT",
+                "ACACIA_CHEST_BOAT",
+                "DARK_OAK_CHEST_BOAT",
+                "MANGROVE_CHEST_BOAT",
+                "CHERRY_CHEST_BOAT",
+                "BAMBOO_RAFT_WITH_CHEST",
+                "BAMBOO_CHEST_BOAT",
+                "RAFT_WITH_CHEST");
+
+        return Map.copyOf(aliases);
+    }
+
+    private static void registerAliases(Map<String, EntityType> aliases, EntityType type, String... names) {
+        for (String alias : names) {
+            aliases.put(normalizeKey(alias), type);
+        }
     }
 
     private enum ExplosionSource {
