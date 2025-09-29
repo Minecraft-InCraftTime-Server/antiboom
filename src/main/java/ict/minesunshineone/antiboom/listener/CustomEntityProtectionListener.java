@@ -1,6 +1,7 @@
 package ict.minesunshineone.antiboom.listener;
 
 import ict.minesunshineone.antiboom.service.ExplosionProtectionService;
+import ict.minesunshineone.antiboom.service.WindChargeProtectionService;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.WindCharge;
 import org.bukkit.event.EventHandler;
@@ -15,10 +16,13 @@ import java.util.Objects;
 
 public final class CustomEntityProtectionListener implements Listener {
 
-    private final ExplosionProtectionService protectionService;
+    private final ExplosionProtectionService explosionProtectionService;
+    private final WindChargeProtectionService windChargeProtectionService;
 
-    public CustomEntityProtectionListener(ExplosionProtectionService protectionService) {
-        this.protectionService = Objects.requireNonNull(protectionService, "protectionService");
+    public CustomEntityProtectionListener(ExplosionProtectionService explosionProtectionService,
+                                          WindChargeProtectionService windChargeProtectionService) {
+        this.explosionProtectionService = Objects.requireNonNull(explosionProtectionService, "explosionProtectionService");
+        this.windChargeProtectionService = Objects.requireNonNull(windChargeProtectionService, "windChargeProtectionService");
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -27,8 +31,8 @@ public final class CustomEntityProtectionListener implements Listener {
 
         EntityDamageEvent.DamageCause cause = event.getCause();
 
-        if (protectionService.isExplosionProtectionEnabled()
-                && protectionService.isExplosionProtectedEntity(type)
+        if (explosionProtectionService.isExplosionProtectionEnabled()
+                && explosionProtectionService.isExplosionProtectedEntity(type)
                 && (cause == EntityDamageEvent.DamageCause.BLOCK_EXPLOSION
                 || cause == EntityDamageEvent.DamageCause.ENTITY_EXPLOSION
                 || cause == EntityDamageEvent.DamageCause.DRAGON_BREATH)) {
@@ -36,10 +40,10 @@ public final class CustomEntityProtectionListener implements Listener {
             return;
         }
 
-    if (protectionService.isWindChargeProtectionEnabled()
-        && event instanceof EntityDamageByEntityEvent byEntity
-        && byEntity.getDamager() instanceof WindCharge
-        && protectionService.isWindChargeProtectedEntity(type)) {
+        if (windChargeProtectionService.isProtectionEnabled()
+                && event instanceof EntityDamageByEntityEvent byEntity
+                && byEntity.getDamager() instanceof WindCharge
+                && windChargeProtectionService.isProtectedEntity(type)) {
             event.setCancelled(true);
         }
     }
@@ -49,15 +53,15 @@ public final class CustomEntityProtectionListener implements Listener {
         EntityType type = event.getEntity().getType();
 
         if (event.getCause() == HangingBreakEvent.RemoveCause.EXPLOSION
-                && protectionService.isExplosionProtectionEnabled()
-                && protectionService.isExplosionProtectedEntity(type)) {
+                && explosionProtectionService.isExplosionProtectionEnabled()
+                && explosionProtectionService.isExplosionProtectedEntity(type)) {
             event.setCancelled(true);
             return;
         }
 
         if (event.getCause() == HangingBreakEvent.RemoveCause.ENTITY
-                && protectionService.isWindChargeProtectionEnabled()
-                && protectionService.isWindChargeProtectedEntity(type)
+                && windChargeProtectionService.isProtectionEnabled()
+                && windChargeProtectionService.isProtectedEntity(type)
                 && event instanceof HangingBreakByEntityEvent byEntity
                 && byEntity.getRemover() instanceof WindCharge) {
             event.setCancelled(true);

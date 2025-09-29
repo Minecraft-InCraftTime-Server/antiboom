@@ -1,5 +1,6 @@
 package ict.minesunshineone.antiboom;
 
+import ict.minesunshineone.antiboom.protection.EntityProtectionRules;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Creeper;
@@ -33,21 +34,15 @@ public final class ExplosionSettings {
     private static final Map<String, EntityType> ENTITY_ALIASES = createEntityAliases();
 
     private final Map<ExplosionSource, ProtectionMode> explosionModes;
-    private final boolean explosionEntityProtectionEnabled;
-    private final Map<EntityType, Boolean> explosionEntityProtections;
-    private final boolean windChargeProtectionEnabled;
-    private final Map<EntityType, Boolean> windChargeEntityProtections;
+    private final EntityProtectionRules explosionProtection;
+    private final EntityProtectionRules windChargeProtection;
 
     private ExplosionSettings(Map<ExplosionSource, ProtectionMode> explosionModes,
-                              boolean explosionEntityProtectionEnabled,
-                              Map<EntityType, Boolean> explosionEntityProtections,
-                              boolean windChargeProtectionEnabled,
-                              Map<EntityType, Boolean> windChargeEntityProtections) {
+                              EntityProtectionRules explosionProtection,
+                              EntityProtectionRules windChargeProtection) {
         this.explosionModes = new EnumMap<>(explosionModes);
-        this.explosionEntityProtectionEnabled = explosionEntityProtectionEnabled;
-        this.explosionEntityProtections = explosionEntityProtections;
-        this.windChargeProtectionEnabled = windChargeProtectionEnabled;
-        this.windChargeEntityProtections = windChargeEntityProtections;
+        this.explosionProtection = explosionProtection;
+        this.windChargeProtection = windChargeProtection;
     }
 
     public static ExplosionSettings fromConfig(FileConfiguration config, Logger logger) {
@@ -58,7 +53,10 @@ public final class ExplosionSettings {
         boolean windEnabled = config.getBoolean("wind-charge-protection.enabled", true);
         Map<EntityType, Boolean> windProtection = loadEntityProtection(config.getConfigurationSection("wind-charge-protection.entities"));
 
-        return new ExplosionSettings(explosionModes, explosionEnabled, explosionProtection, windEnabled, windProtection);
+        EntityProtectionRules explosionRules = new EntityProtectionRules(explosionEnabled, explosionProtection, DEFAULT_PROTECTED_ENTITIES);
+        EntityProtectionRules windRules = new EntityProtectionRules(windEnabled, windProtection, DEFAULT_PROTECTED_ENTITIES);
+
+        return new ExplosionSettings(explosionModes, explosionRules, windRules);
     }
 
     public ProtectionMode resolveMode(Entity source) {
@@ -85,40 +83,16 @@ public final class ExplosionSettings {
         return ProtectionMode.ALLOW;
     }
 
-    public boolean isExplosionProtectionEnabled() {
-        return explosionEntityProtectionEnabled;
-    }
-
-    public boolean isExplosionProtected(EntityType type) {
-        if (!explosionEntityProtectionEnabled) {
-            return false;
-        }
-
-        if (!explosionEntityProtections.isEmpty()) {
-            return explosionEntityProtections.getOrDefault(type, Boolean.FALSE);
-        }
-
-        return DEFAULT_PROTECTED_ENTITIES.contains(type);
-    }
-
-    public boolean isWindChargeProtectionEnabled() {
-        return windChargeProtectionEnabled;
-    }
-
-    public boolean isWindChargeProtected(EntityType type) {
-        if (!windChargeProtectionEnabled) {
-            return false;
-        }
-
-        if (!windChargeEntityProtections.isEmpty()) {
-            return windChargeEntityProtections.getOrDefault(type, Boolean.FALSE);
-        }
-
-        return DEFAULT_PROTECTED_ENTITIES.contains(type);
-    }
-
     public Set<EntityType> defaultProtectedEntities() {
         return EnumSet.copyOf(DEFAULT_PROTECTED_ENTITIES);
+    }
+
+    public EntityProtectionRules explosionEntityRules() {
+        return explosionProtection;
+    }
+
+    public EntityProtectionRules windChargeEntityRules() {
+        return windChargeProtection;
     }
 
     private static Map<ExplosionSource, ProtectionMode> loadExplosionModes(FileConfiguration config, Logger logger) {

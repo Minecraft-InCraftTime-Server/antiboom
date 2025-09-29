@@ -3,6 +3,7 @@ package ict.minesunshineone.antiboom.service;
 import ict.minesunshineone.antiboom.AntiBoomPlugin;
 import ict.minesunshineone.antiboom.ExplosionSettings;
 import ict.minesunshineone.antiboom.ProtectionMode;
+import ict.minesunshineone.antiboom.protection.EntityProtectionRules;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.FireworkEffect;
@@ -53,7 +54,11 @@ public final class ExplosionProtectionService {
 
     public boolean isExplosionProtectionEnabled() {
         ExplosionSettings settings = plugin.getSettings();
-        return settings != null && settings.isExplosionProtectionEnabled();
+        if (settings == null) {
+            return false;
+        }
+
+        return settings.explosionEntityRules().isEnabled();
     }
 
     public boolean isExplosionProtectedEntity(EntityType type) {
@@ -62,21 +67,7 @@ public final class ExplosionProtectionService {
             return false;
         }
 
-        return settings.isExplosionProtected(type);
-    }
-
-    public boolean isWindChargeProtectionEnabled() {
-        ExplosionSettings settings = plugin.getSettings();
-        return settings != null && settings.isWindChargeProtectionEnabled();
-    }
-
-    public boolean isWindChargeProtectedEntity(EntityType type) {
-        ExplosionSettings settings = plugin.getSettings();
-        if (settings == null) {
-            return false;
-        }
-
-        return settings.isWindChargeProtected(type);
+        return settings.explosionEntityRules().isProtected(type);
     }
 
     private void applyMode(ProtectionMode mode,
@@ -148,16 +139,17 @@ public final class ExplosionProtectionService {
     }
 
     private void filterAttachedSupportBlocks(Location location, List<?> affectedBlocks) {
-        if (!isExplosionProtectionEnabled()) {
-            return;
-        }
-
         if (affectedBlocks == null || affectedBlocks.isEmpty()) {
             return;
         }
 
         ExplosionSettings settings = plugin.getSettings();
         if (settings == null) {
+            return;
+        }
+
+        EntityProtectionRules rules = settings.explosionEntityRules();
+        if (!rules.isEnabled()) {
             return;
         }
 
@@ -173,12 +165,12 @@ public final class ExplosionProtectionService {
             return;
         }
 
-        blocks.removeIf(block -> supportsProtectedHanging(block, settings));
+        blocks.removeIf(block -> supportsProtectedHanging(block, rules));
     }
 
-    private boolean supportsProtectedHanging(Block block, ExplosionSettings settings) {
+    private boolean supportsProtectedHanging(Block block, EntityProtectionRules rules) {
         BoundingBox box = BoundingBox.of(block).expand(1.0);
-        return block.getWorld().getNearbyEntities(box, entity -> entity instanceof Hanging hanging && isProtectedHanging(hanging, settings))
+        return block.getWorld().getNearbyEntities(box, entity -> entity instanceof Hanging hanging && isProtectedHanging(hanging, rules))
                 .stream()
                 .map(Hanging.class::cast)
                 .anyMatch(hanging -> {
@@ -191,8 +183,8 @@ public final class ExplosionProtectionService {
                 });
     }
 
-    private boolean isProtectedHanging(Hanging hanging, ExplosionSettings settings) {
+    private boolean isProtectedHanging(Hanging hanging, EntityProtectionRules rules) {
         EntityType type = hanging.getType();
-        return settings.isExplosionProtected(type);
+        return rules.isProtected(type);
     }
 }
