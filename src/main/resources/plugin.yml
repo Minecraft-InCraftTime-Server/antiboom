@@ -1,7 +1,16 @@
 name: AntiBoom
-version: 1.0.0
+version: 1.0.1
 main: ict.minesunshineone.antiboom.AntiBoomPlugin
 description: "Explosion protection plugin for Paper 1.21 and Folia"
 api-version: "1.21"
 folia-supported: true
 author: MinesunshineOne
+commands:
+	antiboom:
+		description: Manage AntiBoom plugin settings.
+		usage: "/antiboom reload"
+		permission: antiboom.reload
+permissions:
+	antiboom.reload:
+		description: Allows reloading AntiBoom configuration.
+		default: op

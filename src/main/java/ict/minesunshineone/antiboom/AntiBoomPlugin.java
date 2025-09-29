@@ -7,7 +7,11 @@ import ict.minesunshineone.antiboom.listener.GenericExplosionListener;
 import ict.minesunshineone.antiboom.listener.GhastExplosionListener;
 import ict.minesunshineone.antiboom.service.ExplosionProtectionService;
 import ict.minesunshineone.antiboom.service.WindChargeProtectionService;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 
 public final class AntiBoomPlugin extends JavaPlugin {
 
@@ -54,5 +58,32 @@ public final class AntiBoomPlugin extends JavaPlugin {
 
     public WindChargeProtectionService getWindChargeProtectionService() {
         return windChargeProtectionService;
+    }
+
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (!command.getName().equalsIgnoreCase("antiboom")) {
+            return false;
+        }
+
+        if (args.length == 1 && args[0].equalsIgnoreCase("reload")) {
+            if (!sender.hasPermission("antiboom.reload")) {
+                sender.sendMessage(Component.text("你没有权限执行该命令。", NamedTextColor.RED));
+                return true;
+            }
+
+            long start = System.currentTimeMillis();
+            reloadConfig();
+            long cost = System.currentTimeMillis() - start;
+            sender.sendMessage(Component.text()
+                    .append(Component.text("AntiBoom 配置已重新加载 (", NamedTextColor.GREEN))
+                    .append(Component.text(cost, NamedTextColor.GREEN))
+                    .append(Component.text("ms)。", NamedTextColor.GREEN))
+                    .build());
+            return true;
+        }
+
+        sender.sendMessage(Component.text("用法: /" + label + " reload", NamedTextColor.YELLOW));
+        return true;
     }
 }
