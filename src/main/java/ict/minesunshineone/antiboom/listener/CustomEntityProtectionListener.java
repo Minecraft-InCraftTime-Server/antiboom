@@ -9,8 +9,9 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.hanging.HangingBreakEvent;
+import org.bukkit.event.hanging.HangingBreakByEntityEvent;
+import org.bukkit.event.hanging.HangingBreakEvent.RemoveCause;
 
 import java.util.Objects;
 
@@ -52,19 +53,31 @@ public final class CustomEntityProtectionListener implements Listener {
     public void onHangingBreak(HangingBreakEvent event) {
         EntityType type = event.getEntity().getType();
 
-        if (event.getCause() == HangingBreakEvent.RemoveCause.EXPLOSION
+        RemoveCause cause = event.getCause();
+
+        if (cause == RemoveCause.EXPLOSION
                 && explosionProtectionService.isExplosionProtectionEnabled()
                 && explosionProtectionService.isExplosionProtectedEntity(type)) {
             event.setCancelled(true);
             return;
         }
 
-        if (event.getCause() == HangingBreakEvent.RemoveCause.ENTITY
-                && windChargeProtectionService.isProtectionEnabled()
-                && windChargeProtectionService.isProtectedEntity(type)
-                && event instanceof HangingBreakByEntityEvent byEntity
-                && byEntity.getRemover() instanceof WindCharge) {
-            event.setCancelled(true);
+        if (cause == RemoveCause.ENTITY && event instanceof HangingBreakByEntityEvent byEntity) {
+            if (byEntity.getRemover() instanceof WindCharge) {
+                if (windChargeProtectionService.isProtectionEnabled()
+                        && windChargeProtectionService.isProtectedEntity(type)) {
+                    event.setCancelled(true);
+                    return;
+                }
+
+                // Wind Charge also pushes without removing cause when item frame is empty; ensure protection applies.
+                if (type == EntityType.ITEM_FRAME || type == EntityType.GLOW_ITEM_FRAME) {
+                    if (windChargeProtectionService.isProtectionEnabled()
+                            && windChargeProtectionService.isProtectedEntity(type)) {
+                        event.setCancelled(true);
+                    }
+                }
+            }
         }
     }
 }

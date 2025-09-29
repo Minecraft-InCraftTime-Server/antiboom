@@ -97,11 +97,12 @@ public final class ExplosionProtectionService {
             return;
         }
 
-        Location centered = location.clone().add(new Vector(0.5, 0.0, 0.5));
+        double yOffset = source != null ? source.getHeight() + 0.3 : 1.0;
+        Location effectLocation = location.clone().add(new Vector(0.5, yOffset, 0.5));
         World finalWorld = world;
 
-        Bukkit.getRegionScheduler().run(plugin, centered, task -> {
-            Firework firework = finalWorld.spawn(centered, Firework.class, fw -> configureFirework(fw, source));
+        Bukkit.getRegionScheduler().run(plugin, effectLocation, task -> {
+            Firework firework = finalWorld.spawn(effectLocation, Firework.class, fw -> configureFirework(fw, source));
             firework.detonate();
         });
     }
@@ -119,20 +120,18 @@ public final class ExplosionProtectionService {
     private FireworkEffect createFireworkEffect(Entity source) {
         FireworkEffect.Builder builder = FireworkEffect.builder()
                 .trail(false)
-                .flicker(false);
+                .flicker(false)
+                .withFade(Color.fromRGB(120, 120, 120));
 
         if (source instanceof Creeper) {
             builder.with(FireworkEffect.Type.CREEPER)
-                    .withColor(Color.fromRGB(58, 189, 73))
-                    .withFade(Color.fromRGB(18, 78, 26));
+                    .withColor(Color.fromRGB(84, 255, 84));
         } else if (source instanceof Fireball fireball && fireball.getShooter() instanceof Ghast) {
-            builder.with(FireworkEffect.Type.CREEPER)
-                    .withColor(Color.fromRGB(235, 235, 235))
-                    .withFade(Color.fromRGB(120, 120, 120));
+            builder.with(FireworkEffect.Type.BALL)
+                    .withColor(Color.fromRGB(240, 32, 32));
         } else {
             builder.with(FireworkEffect.Type.BALL)
-                    .withColor(Color.fromRGB(255, 240, 200))
-                    .withFade(Color.fromRGB(180, 160, 120));
+                    .withColor(Color.fromRGB(255, 240, 200));
         }
 
         return builder.build();
