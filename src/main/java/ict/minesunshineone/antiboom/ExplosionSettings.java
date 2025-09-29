@@ -33,23 +33,32 @@ public final class ExplosionSettings {
     private static final Map<String, EntityType> ENTITY_ALIASES = createEntityAliases();
 
     private final Map<ExplosionSource, ProtectionMode> explosionModes;
-    private final boolean customEntityProtectionEnabled;
-    private final Map<EntityType, Boolean> entityProtections;
+    private final boolean explosionEntityProtectionEnabled;
+    private final Map<EntityType, Boolean> explosionEntityProtections;
+    private final boolean windChargeProtectionEnabled;
+    private final Map<EntityType, Boolean> windChargeEntityProtections;
 
     private ExplosionSettings(Map<ExplosionSource, ProtectionMode> explosionModes,
-                              boolean customEntityProtectionEnabled,
-                              Map<EntityType, Boolean> entityProtections) {
+                              boolean explosionEntityProtectionEnabled,
+                              Map<EntityType, Boolean> explosionEntityProtections,
+                              boolean windChargeProtectionEnabled,
+                              Map<EntityType, Boolean> windChargeEntityProtections) {
         this.explosionModes = new EnumMap<>(explosionModes);
-        this.customEntityProtectionEnabled = customEntityProtectionEnabled;
-        this.entityProtections = entityProtections;
+        this.explosionEntityProtectionEnabled = explosionEntityProtectionEnabled;
+        this.explosionEntityProtections = explosionEntityProtections;
+        this.windChargeProtectionEnabled = windChargeProtectionEnabled;
+        this.windChargeEntityProtections = windChargeEntityProtections;
     }
 
     public static ExplosionSettings fromConfig(FileConfiguration config, Logger logger) {
         Map<ExplosionSource, ProtectionMode> explosionModes = loadExplosionModes(config, logger);
-        boolean enabled = config.getBoolean("custom-protection.enabled", true);
-        Map<EntityType, Boolean> entityProtection = loadEntityProtection(config.getConfigurationSection("custom-protection.entities"));
+        boolean explosionEnabled = readEnabledFlag(config, "explosion-protection.enabled", "custom-protection.enabled");
+        Map<EntityType, Boolean> explosionProtection = loadEntityProtection(resolveSection(config, "explosion-protection.entities", "custom-protection.entities"));
 
-        return new ExplosionSettings(explosionModes, enabled, entityProtection);
+        boolean windEnabled = config.getBoolean("wind-charge-protection.enabled", true);
+        Map<EntityType, Boolean> windProtection = loadEntityProtection(config.getConfigurationSection("wind-charge-protection.entities"));
+
+        return new ExplosionSettings(explosionModes, explosionEnabled, explosionProtection, windEnabled, windProtection);
     }
 
     public ProtectionMode resolveMode(Entity source) {
@@ -76,17 +85,33 @@ public final class ExplosionSettings {
         return ProtectionMode.ALLOW;
     }
 
-    public boolean isCustomProtectionEnabled() {
-        return customEntityProtectionEnabled;
+    public boolean isExplosionProtectionEnabled() {
+        return explosionEntityProtectionEnabled;
     }
 
-    public boolean isEntityProtected(EntityType type) {
-        if (!customEntityProtectionEnabled) {
+    public boolean isExplosionProtected(EntityType type) {
+        if (!explosionEntityProtectionEnabled) {
             return false;
         }
 
-        if (!entityProtections.isEmpty()) {
-            return entityProtections.getOrDefault(type, Boolean.FALSE);
+        if (!explosionEntityProtections.isEmpty()) {
+            return explosionEntityProtections.getOrDefault(type, Boolean.FALSE);
+        }
+
+        return DEFAULT_PROTECTED_ENTITIES.contains(type);
+    }
+
+    public boolean isWindChargeProtectionEnabled() {
+        return windChargeProtectionEnabled;
+    }
+
+    public boolean isWindChargeProtected(EntityType type) {
+        if (!windChargeProtectionEnabled) {
+            return false;
+        }
+
+        if (!windChargeEntityProtections.isEmpty()) {
+            return windChargeEntityProtections.getOrDefault(type, Boolean.FALSE);
         }
 
         return DEFAULT_PROTECTED_ENTITIES.contains(type);
@@ -137,6 +162,21 @@ public final class ExplosionSettings {
         }
 
         return values;
+    }
+
+    private static boolean readEnabledFlag(FileConfiguration config, String primary, String fallback) {
+        if (config.contains(primary)) {
+            return config.getBoolean(primary);
+        }
+        return config.getBoolean(fallback, true);
+    }
+
+    private static ConfigurationSection resolveSection(FileConfiguration config, String primary, String fallback) {
+        ConfigurationSection section = config.getConfigurationSection(primary);
+        if (section != null) {
+            return section;
+        }
+        return config.getConfigurationSection(fallback);
     }
 
     private static EntityType resolveEntityType(String key) {

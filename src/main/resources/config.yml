@@ -6,7 +6,18 @@ explosions:
   ghast-fireball: firework
   ender-dragon: protect
 
-custom-protection:
+explosion-protection:
+  enabled: true
+  entities:
+    painting: true
+    armor_stand: true
+    item_frame: true
+    glow_item_frame: true
+    # 船类支持别名，例如 oak_boat、oak_chest_boat、bamboo_raft 等
+    boat: true
+    leash_knot: true
+
+wind-charge-protection:
   enabled: true
   entities:
     painting: true

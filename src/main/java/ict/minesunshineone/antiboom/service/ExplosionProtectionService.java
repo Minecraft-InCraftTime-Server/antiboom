@@ -8,10 +8,17 @@ import org.bukkit.Color;
 import org.bukkit.FireworkEffect;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Creeper;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Fireball;
 import org.bukkit.entity.Firework;
+import org.bukkit.entity.Ghast;
+import org.bukkit.entity.Hanging;
 import org.bukkit.inventory.meta.FireworkMeta;
+import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 
 import java.util.List;
@@ -30,8 +37,9 @@ public final class ExplosionProtectionService {
                                  Location location,
                                  List<?> affectedBlocks,
                                  Consumer<Float> yieldSetter) {
+        filterAttachedSupportBlocks(location, affectedBlocks);
         ProtectionMode mode = resolveMode(source);
-        applyMode(mode, location, affectedBlocks, yieldSetter);
+        applyMode(mode, location, affectedBlocks, yieldSetter, source);
     }
 
     public ProtectionMode resolveMode(Entity source) {
@@ -43,24 +51,39 @@ public final class ExplosionProtectionService {
         return settings.resolveMode(source);
     }
 
-    public boolean isCustomProtectionEnabled() {
+    public boolean isExplosionProtectionEnabled() {
         ExplosionSettings settings = plugin.getSettings();
-        return settings != null && settings.isCustomProtectionEnabled();
+        return settings != null && settings.isExplosionProtectionEnabled();
     }
 
-    public boolean isProtectedEntity(EntityType type) {
+    public boolean isExplosionProtectedEntity(EntityType type) {
         ExplosionSettings settings = plugin.getSettings();
         if (settings == null) {
             return false;
         }
 
-        return settings.isEntityProtected(type);
+        return settings.isExplosionProtected(type);
+    }
+
+    public boolean isWindChargeProtectionEnabled() {
+        ExplosionSettings settings = plugin.getSettings();
+        return settings != null && settings.isWindChargeProtectionEnabled();
+    }
+
+    public boolean isWindChargeProtectedEntity(EntityType type) {
+        ExplosionSettings settings = plugin.getSettings();
+        if (settings == null) {
+            return false;
+        }
+
+        return settings.isWindChargeProtected(type);
     }
 
     private void applyMode(ProtectionMode mode,
                            Location location,
                            List<?> affectedBlocks,
-                           Consumer<Float> yieldSetter) {
+                           Consumer<Float> yieldSetter,
+                           Entity source) {
         if (mode == null || !mode.suppressBlocks()) {
             return;
         }
@@ -69,11 +92,11 @@ public final class ExplosionProtectionService {
         yieldSetter.accept(0F);
 
         if (mode.spawnFirework()) {
-            spawnFirework(location);
+            spawnFirework(location, source);
         }
     }
 
-    private void spawnFirework(Location location) {
+    private void spawnFirework(Location location, Entity source) {
         if (location == null) {
             return;
         }
@@ -87,24 +110,89 @@ public final class ExplosionProtectionService {
         World finalWorld = world;
 
         Bukkit.getRegionScheduler().run(plugin, centered, task -> {
-            Firework firework = finalWorld.spawn(centered, Firework.class, this::configureFirework);
+            Firework firework = finalWorld.spawn(centered, Firework.class, fw -> configureFirework(fw, source));
             firework.detonate();
         });
     }
 
-    private void configureFirework(Firework firework) {
+    private void configureFirework(Firework firework, Entity source) {
         FireworkMeta meta = firework.getFireworkMeta();
-        FireworkEffect effect = FireworkEffect.builder()
-                .with(FireworkEffect.Type.BALL_LARGE)
-                .withColor(Color.ORANGE, Color.YELLOW)
-                .withFade(Color.WHITE)
-                .flicker(true)
-                .trail(true)
-                .build();
+        FireworkEffect effect = createFireworkEffect(source);
         meta.clearEffects();
         meta.addEffect(effect);
         meta.setPower(0);
         firework.setFireworkMeta(meta);
         firework.setTicksLived(2);
+    }
+
+    private FireworkEffect createFireworkEffect(Entity source) {
+        FireworkEffect.Builder builder = FireworkEffect.builder()
+                .trail(false)
+                .flicker(false);
+
+        if (source instanceof Creeper) {
+            builder.with(FireworkEffect.Type.CREEPER)
+                    .withColor(Color.fromRGB(58, 189, 73))
+                    .withFade(Color.fromRGB(18, 78, 26));
+        } else if (source instanceof Fireball fireball && fireball.getShooter() instanceof Ghast) {
+            builder.with(FireworkEffect.Type.CREEPER)
+                    .withColor(Color.fromRGB(235, 235, 235))
+                    .withFade(Color.fromRGB(120, 120, 120));
+        } else {
+            builder.with(FireworkEffect.Type.BALL)
+                    .withColor(Color.fromRGB(255, 240, 200))
+                    .withFade(Color.fromRGB(180, 160, 120));
+        }
+
+        return builder.build();
+    }
+
+    private void filterAttachedSupportBlocks(Location location, List<?> affectedBlocks) {
+        if (!isExplosionProtectionEnabled()) {
+            return;
+        }
+
+        if (affectedBlocks == null || affectedBlocks.isEmpty()) {
+            return;
+        }
+
+        ExplosionSettings settings = plugin.getSettings();
+        if (settings == null) {
+            return;
+        }
+
+        @SuppressWarnings("unchecked")
+        List<Block> blocks = (List<Block>) affectedBlocks;
+
+        World world = location != null ? location.getWorld() : null;
+        if (world == null && !blocks.isEmpty()) {
+            world = blocks.get(0).getWorld();
+        }
+
+        if (world == null) {
+            return;
+        }
+
+        blocks.removeIf(block -> supportsProtectedHanging(block, settings));
+    }
+
+    private boolean supportsProtectedHanging(Block block, ExplosionSettings settings) {
+        BoundingBox box = BoundingBox.of(block).expand(1.0);
+        return block.getWorld().getNearbyEntities(box, entity -> entity instanceof Hanging hanging && isProtectedHanging(hanging, settings))
+                .stream()
+                .map(Hanging.class::cast)
+                .anyMatch(hanging -> {
+                    BlockFace face = hanging.getAttachedFace();
+                    if (face == null) {
+                        return false;
+                    }
+                    Block attached = hanging.getLocation().getBlock().getRelative(face);
+                    return attached.equals(block);
+                });
+    }
+
+    private boolean isProtectedHanging(Hanging hanging, ExplosionSettings settings) {
+        EntityType type = hanging.getType();
+        return settings.isExplosionProtected(type);
     }
 }
