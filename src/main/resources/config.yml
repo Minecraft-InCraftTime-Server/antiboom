@@ -8,6 +8,8 @@ explosions:
 
 explosion-protection:
   enabled: true
+  # 是否保护被列入保护清单的挂饰背后的支撑方块（true 表示同时阻止支撑方块被破坏）
+  protect-support-blocks: true
   entities:
     painting: true
     armor_stand: true

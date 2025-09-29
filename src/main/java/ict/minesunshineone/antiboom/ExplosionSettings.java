@@ -36,19 +36,23 @@ public final class ExplosionSettings {
     private final Map<ExplosionSource, ProtectionMode> explosionModes;
     private final EntityProtectionRules explosionProtection;
     private final EntityProtectionRules windChargeProtection;
+    private final boolean protectSupportBlocks;
 
     private ExplosionSettings(Map<ExplosionSource, ProtectionMode> explosionModes,
                               EntityProtectionRules explosionProtection,
-                              EntityProtectionRules windChargeProtection) {
+                              EntityProtectionRules windChargeProtection,
+                              boolean protectSupportBlocks) {
         this.explosionModes = new EnumMap<>(explosionModes);
         this.explosionProtection = explosionProtection;
         this.windChargeProtection = windChargeProtection;
+        this.protectSupportBlocks = protectSupportBlocks;
     }
 
     public static ExplosionSettings fromConfig(FileConfiguration config, Logger logger) {
         Map<ExplosionSource, ProtectionMode> explosionModes = loadExplosionModes(config, logger);
-        boolean explosionEnabled = readEnabledFlag(config, "explosion-protection.enabled", "custom-protection.enabled");
-        Map<EntityType, Boolean> explosionProtection = loadEntityProtection(resolveSection(config, "explosion-protection.entities", "custom-protection.entities"));
+        boolean explosionEnabled = config.getBoolean("explosion-protection.enabled", true);
+        Map<EntityType, Boolean> explosionProtection = loadEntityProtection(config.getConfigurationSection("explosion-protection.entities"));
+        boolean protectSupportBlocks = config.getBoolean("explosion-protection.protect-support-blocks", true);
 
         boolean windEnabled = config.getBoolean("wind-charge-protection.enabled", true);
         Map<EntityType, Boolean> windProtection = loadEntityProtection(config.getConfigurationSection("wind-charge-protection.entities"));
@@ -56,7 +60,7 @@ public final class ExplosionSettings {
         EntityProtectionRules explosionRules = new EntityProtectionRules(explosionEnabled, explosionProtection, DEFAULT_PROTECTED_ENTITIES);
         EntityProtectionRules windRules = new EntityProtectionRules(windEnabled, windProtection, DEFAULT_PROTECTED_ENTITIES);
 
-        return new ExplosionSettings(explosionModes, explosionRules, windRules);
+        return new ExplosionSettings(explosionModes, explosionRules, windRules, protectSupportBlocks);
     }
 
     public ProtectionMode resolveMode(Entity source) {
@@ -93,6 +97,10 @@ public final class ExplosionSettings {
 
     public EntityProtectionRules windChargeEntityRules() {
         return windChargeProtection;
+    }
+
+    public boolean protectSupportBlocks() {
+        return protectSupportBlocks;
     }
 
     private static Map<ExplosionSource, ProtectionMode> loadExplosionModes(FileConfiguration config, Logger logger) {
@@ -136,21 +144,6 @@ public final class ExplosionSettings {
         }
 
         return values;
-    }
-
-    private static boolean readEnabledFlag(FileConfiguration config, String primary, String fallback) {
-        if (config.contains(primary)) {
-            return config.getBoolean(primary);
-        }
-        return config.getBoolean(fallback, true);
-    }
-
-    private static ConfigurationSection resolveSection(FileConfiguration config, String primary, String fallback) {
-        ConfigurationSection section = config.getConfigurationSection(primary);
-        if (section != null) {
-            return section;
-        }
-        return config.getConfigurationSection(fallback);
     }
 
     private static EntityType resolveEntityType(String key) {

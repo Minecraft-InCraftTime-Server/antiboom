@@ -34,10 +34,10 @@ public enum ProtectionMode {
 
         String normalized = value.trim().toLowerCase(Locale.ROOT);
         switch (normalized) {
-            case "true", "protect", "block" -> {
+            case "true", "protect" -> {
                 return PROTECT;
             }
-            case "false", "allow", "off" -> {
+            case "false", "allow" -> {
                 return ALLOW;
             }
             case "firework" -> {
