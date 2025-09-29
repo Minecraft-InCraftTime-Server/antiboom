@@ -17,13 +17,13 @@ Folia 兼容的 Paper 1.21 防爆插件，提供灵活的爆炸保护以及可�
 mvn clean package
 ```
 
-构建完成后在 `target` 目录下获取插件 JAR（推荐使用 `antiboom-1.0.0-SNAPSHOT-all.jar`）。
+构建完成后在 `target` 目录下获取插件 JAR。
 
 ## 部署
 
 1. 将生成的 JAR 放入服务器的 `plugins` 目录。
 2. 启动或重载服务端，插件会在首次启动时生成默认配置。
-3. 根据需要编辑 `plugins/AntiBoom/config.yml`，修改后可使用 `/reload` 或重启以应用新配置。
+3. 根据需要编辑 `plugins/AntiBoom/config.yml`，修改后可使用 `/antiboom reload`（需 `antiboom.reload` 权限）或重启以应用新配置。
 
 ## 配置说明
 
