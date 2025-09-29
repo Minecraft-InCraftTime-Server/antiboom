@@ -44,8 +44,10 @@ explosion-protection:
     armor_stand: true
     item_frame: true
     glow_item_frame: true
-    # 船类支持 `oak_boat`、`oak_chest_boat`、`bamboo_raft` 等别名
+    # 船类支持 `oak_boat`、`bamboo_raft` 等别名
     boat: true
+    # 箱船支持 `oak_chest_boat`、`bamboo_chest_raft` 等别名
+    chest_boat: true
     leash_knot: true
 
 wind-charge-protection:
@@ -56,6 +58,7 @@ wind-charge-protection:
     item_frame: true
     glow_item_frame: true
     boat: true
+    chest_boat: true
     leash_knot: true
 ```
 

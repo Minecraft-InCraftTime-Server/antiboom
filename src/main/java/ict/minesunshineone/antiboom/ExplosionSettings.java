@@ -28,6 +28,7 @@ public final class ExplosionSettings {
             EntityType.GLOW_ITEM_FRAME,
             EntityType.ARMOR_STAND,
             EntityType.BOAT,
+            EntityType.CHEST_BOAT,
             EntityType.LEASH_KNOT
     );
 
@@ -174,8 +175,7 @@ public final class ExplosionSettings {
                 "DARK_OAK_BOAT",
                 "MANGROVE_BOAT",
                 "CHERRY_BOAT",
-                "BAMBOO_RAFT",
-                "BAMBOO_BOAT");
+                "BAMBOO_RAFT");
 
         registerAliases(aliases, EntityType.CHEST_BOAT,
                 "OAK_CHEST_BOAT",
@@ -185,8 +185,7 @@ public final class ExplosionSettings {
                 "ACACIA_CHEST_BOAT",
                 "DARK_OAK_CHEST_BOAT",
                 "MANGROVE_CHEST_BOAT",
-                "CHERRY_CHEST_BOAT",
-                "BAMBOO_CHEST_RAFT");
+                "CHERRY_CHEST_BOAT");
 
         return Map.copyOf(aliases);
     }
