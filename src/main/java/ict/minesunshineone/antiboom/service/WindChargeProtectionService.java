@@ -6,6 +6,7 @@ import ict.minesunshineone.antiboom.protection.EntityProtectionRules;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemFrame;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.Objects;
 
@@ -59,8 +60,9 @@ public final class WindChargeProtectionService {
             return false;
         }
 
-        if (entity instanceof ItemFrame) {
-            return true;
+        if (entity instanceof ItemFrame frame) {
+            ItemStack item = frame.getItem();
+            return item != null && !item.getType().isAir();
         }
 
         return true;

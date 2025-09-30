@@ -16,18 +16,23 @@ explosion-protection:
     item_frame: true
     glow_item_frame: true
     leash_knot: true
+  xyz-regions: []
   # 可选：按 XYZ 范围定义区域防爆，示例结构如下（去掉注释后生效）：
-  xyz-regions:
-    - world: world
-      min:
-        x: 1
-        y: 1
-        z: 1
-      max:
-        x: 100
-        y: 100
-        z: 100
-      mode: protect
+  # xyz-regions:
+  #   - world: world
+  #     min:
+  #       x: -16
+  #       y: 60
+  #       z: -16
+  #     max:
+  #       x: 16
+  #       y: 80
+  #       z: 16
+  #     mode: protect
+  #     entities:
+  #       boat: true
+  #       minecart: true
+  #       chest_minecart: true
 
 wind-charge-protection:
   enabled: true

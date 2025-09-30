@@ -210,10 +210,43 @@ public final class ExplosionSettings {
             String modeValue = asString(raw.get("mode"));
             ProtectionMode mode = ProtectionMode.fromConfigValue(modeValue, ProtectionMode.PROTECT, logger, path + ".mode");
 
-            regions.add(new RegionProtectionRule(world.trim(), minX, minY, minZ, maxX, maxY, maxZ, mode));
+            Map<?, ?> entityMap = asMap(raw.get("entities"));
+            Set<EntityType> protectedEntities = loadRegionEntities(entityMap, logger, path + ".entities");
+
+            regions.add(new RegionProtectionRule(world.trim(), minX, minY, minZ, maxX, maxY, maxZ, mode, protectedEntities));
         }
 
         return List.copyOf(regions);
+    }
+
+    private static Set<EntityType> loadRegionEntities(Map<?, ?> raw, Logger logger, String path) {
+        if (raw == null || raw.isEmpty()) {
+            return Set.of();
+        }
+
+        EnumSet<EntityType> entities = EnumSet.noneOf(EntityType.class);
+        for (Map.Entry<?, ?> entry : raw.entrySet()) {
+            Object keyObject = entry.getKey();
+            if (!(keyObject instanceof String key)) {
+                continue;
+            }
+
+            EntityType type = resolveEntityType(key);
+            if (type == null) {
+                log(logger, "Skipped " + path + " entry '" + key + "' because it is not a valid entity type.");
+                continue;
+            }
+
+            if (asBoolean(entry.getValue())) {
+                entities.add(type);
+            }
+        }
+
+        if (entities.isEmpty()) {
+            return Set.of();
+        }
+
+        return Collections.unmodifiableSet(entities);
     }
 
     private static EntityType resolveEntityType(String key) {
@@ -315,6 +348,16 @@ public final class ExplosionSettings {
             }
         }
         return null;
+    }
+
+    private static boolean asBoolean(Object value) {
+        if (value instanceof Boolean bool) {
+            return bool;
+        }
+        if (value instanceof String string) {
+            return Boolean.parseBoolean(string.trim());
+        }
+        return false;
     }
 
     private static void log(Logger logger, String message) {
