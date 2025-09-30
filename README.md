@@ -7,6 +7,7 @@ Folia 兼容的 Paper 1.21 防爆插件，提供灵活的爆炸保护以及可�
 - 基于配置的爆炸控制：`protect` 阻止爆炸破坏方块、`allow` 允许破坏、`firework` 展示烟花效果并阻止方块破坏。
 - 支持针对不同爆炸源（如苦力怕、恶魂火球、末影龙）的独立设置，苦力怕与恶魂分别触发对应脸型烟花，粒子效果经过精简。
 - 可选的自定义保护：可为地图画、盔甲架、展示框（含荧光）、船（支持 `oak_boat` 等别名）、拴绳等实体逐一开关爆炸免疫，并可通过开关控制是否保护这些挂饰背后的支撑方块。
+- 支持按世界坐标定义 XYZ 区域防爆，可为特定区域强制套用 `protect` 或 `firework` 模式。
 - 新增风弹（Wind Charge）防护，防止 Breeze 风弹对指定实体造成伤害或破坏。
 - 默认阻止末影龙破坏方块（爆炸及直接破坏），可通过配置调整。
 - 通过 Folia 区域调度器触发烟花，确保多线程服务器环境安全。
@@ -49,6 +50,18 @@ explosion-protection:
     # 箱船支持 `oak_chest_boat`、`bamboo_chest_raft` 等别名
     chest_boat: true
     leash_knot: true
+  xyz-regions: []
+  # xyz-regions:
+  #   - world: world
+  #     min:
+  #       x: -16
+  #       y: 60
+  #       z: -16
+  #     max:
+  #       x: 16
+  #       y: 80
+  #       z: 16
+  #     mode: firework
 
 wind-charge-protection:
   enabled: true

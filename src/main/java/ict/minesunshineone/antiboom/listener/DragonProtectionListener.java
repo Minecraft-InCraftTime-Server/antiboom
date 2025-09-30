@@ -33,7 +33,18 @@ public final class DragonProtectionListener implements Listener {
             return;
         }
 
-        if (protectionService.resolveMode(event.getEntity()).suppressBlocks()) {
+        if (protectionService.resolveMode(event.getEntity(), event.getBlock().getLocation()).suppressBlocks()) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onWitherChangeBlock(EntityChangeBlockEvent event) {
+        if (event.getEntityType() != EntityType.WITHER) {
+            return;
+        }
+
+        if (protectionService.resolveMode(event.getEntity(), event.getBlock().getLocation()).suppressBlocks()) {
             event.setCancelled(true);
         }
     }

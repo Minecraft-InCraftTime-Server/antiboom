@@ -39,17 +39,22 @@ public final class ExplosionProtectionService {
                                  List<?> affectedBlocks,
                                  Consumer<Float> yieldSetter) {
         filterAttachedSupportBlocks(location, affectedBlocks);
-        ProtectionMode mode = resolveMode(source);
+        ProtectionMode mode = resolveMode(source, location);
         applyMode(mode, location, affectedBlocks, yieldSetter, source);
     }
 
     public ProtectionMode resolveMode(Entity source) {
+        return resolveMode(source, null);
+    }
+
+    public ProtectionMode resolveMode(Entity source, Location location) {
         ExplosionSettings settings = plugin.getSettings();
         if (settings == null) {
             return ProtectionMode.ALLOW;
         }
 
-        return settings.resolveMode(source);
+        ProtectionMode baseMode = settings.resolveMode(source);
+        return settings.resolveRegion(location).orElse(baseMode);
     }
 
     public boolean isExplosionProtectionEnabled() {

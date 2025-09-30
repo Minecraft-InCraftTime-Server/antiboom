@@ -20,6 +20,19 @@ explosion-protection:
     # 箱船支持 `oak_chest_boat`、`bamboo_chest_raft` 等别名
     chest_boat: true
     leash_knot: true
+  xyz-regions: []
+  # 可选：按 XYZ 范围定义区域防爆，示例结构如下（去掉注释后生效）：
+  # xyz-regions:
+  #   - world: world
+  #     min:
+  #       x: -16
+  #       y: 60
+  #       z: -16
+  #     max:
+  #       x: 16
+  #       y: 80
+  #       z: 16
+  #     mode: protect
 
 wind-charge-protection:
   enabled: true
