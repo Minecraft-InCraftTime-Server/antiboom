@@ -57,6 +57,29 @@ public final class ExplosionProtectionService {
         return settings.resolveRegion(location).orElse(baseMode);
     }
 
+    public boolean shouldProtectEntity(Entity entity) {
+        if (entity == null) {
+            return false;
+        }
+
+        if (isExplosionProtectionEnabled() && isExplosionProtectedEntity(entity.getType())) {
+            return true;
+        }
+
+        return isRegionProtectionActive(entity.getLocation());
+    }
+
+    public boolean isRegionProtectionActive(Location location) {
+        ExplosionSettings settings = plugin.getSettings();
+        if (settings == null || location == null) {
+            return false;
+        }
+
+        return settings.resolveRegion(location)
+                .map(ProtectionMode::suppressBlocks)
+                .orElse(false);
+    }
+
     public boolean isExplosionProtectionEnabled() {
         ExplosionSettings settings = plugin.getSettings();
         if (settings == null) {

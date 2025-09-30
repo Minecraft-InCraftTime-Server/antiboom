@@ -3,7 +3,10 @@ package ict.minesunshineone.antiboom.listener;
 import ict.minesunshineone.antiboom.service.ExplosionProtectionService;
 import ict.minesunshineone.antiboom.service.WindChargeProtectionService;
 import org.bukkit.entity.Breeze;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Explosive;
+import org.bukkit.entity.Vehicle;
 import org.bukkit.entity.WindCharge;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -13,6 +16,9 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.hanging.HangingBreakEvent.RemoveCause;
+import org.bukkit.event.vehicle.VehicleDamageEvent;
+import org.bukkit.event.vehicle.VehicleDestroyEvent;
+import org.bukkit.util.Vector;
 
 import java.util.Objects;
 
@@ -33,13 +39,14 @@ public final class CustomEntityProtectionListener implements Listener {
 
         EntityDamageEvent.DamageCause cause = event.getCause();
 
-        if (explosionProtectionService.isExplosionProtectionEnabled()
-                && explosionProtectionService.isExplosionProtectedEntity(type)
-                && (cause == EntityDamageEvent.DamageCause.BLOCK_EXPLOSION
-                || cause == EntityDamageEvent.DamageCause.ENTITY_EXPLOSION
-                || cause == EntityDamageEvent.DamageCause.DRAGON_BREATH)) {
-            event.setCancelled(true);
-            return;
+        if (isExplosionCause(cause)) {
+            if (explosionProtectionService.shouldProtectEntity(event.getEntity())) {
+                event.setCancelled(true);
+                if (event.getEntity() instanceof Vehicle vehicle) {
+                    resetVehicleVelocity(vehicle);
+                }
+                return;
+            }
         }
 
         if (windChargeProtectionService.isProtectionEnabled()
@@ -57,8 +64,7 @@ public final class CustomEntityProtectionListener implements Listener {
         RemoveCause cause = event.getCause();
 
         if (cause == RemoveCause.EXPLOSION
-                && explosionProtectionService.isExplosionProtectionEnabled()
-                && explosionProtectionService.isExplosionProtectedEntity(type)) {
+                && explosionProtectionService.shouldProtectEntity(event.getEntity())) {
             event.setCancelled(true);
             return;
         }
@@ -80,5 +86,64 @@ public final class CustomEntityProtectionListener implements Listener {
                 }
             }
         }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onVehicleDamage(VehicleDamageEvent event) {
+        Vehicle vehicle = event.getVehicle();
+        if (vehicle == null) {
+            return;
+        }
+
+        if (shouldCancelVehicleEvent(vehicle, event.getAttacker())) {
+            event.setCancelled(true);
+            resetVehicleVelocity(vehicle);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onVehicleDestroy(VehicleDestroyEvent event) {
+        Vehicle vehicle = event.getVehicle();
+        if (vehicle == null) {
+            return;
+        }
+
+        if (shouldCancelVehicleEvent(vehicle, event.getAttacker())) {
+            event.setCancelled(true);
+            resetVehicleVelocity(vehicle);
+        }
+    }
+
+    private static boolean isExplosionCause(EntityDamageEvent.DamageCause cause) {
+        return cause == EntityDamageEvent.DamageCause.BLOCK_EXPLOSION
+                || cause == EntityDamageEvent.DamageCause.ENTITY_EXPLOSION
+                || cause == EntityDamageEvent.DamageCause.DRAGON_BREATH;
+    }
+
+    private boolean shouldCancelVehicleEvent(Vehicle vehicle, Entity attacker) {
+        if (!explosionProtectionService.shouldProtectEntity(vehicle)) {
+            return false;
+        }
+
+        if (attacker != null) {
+            return isExplosiveAttacker(attacker);
+        }
+
+        EntityDamageEvent lastDamage = vehicle.getLastDamageCause();
+        return lastDamage != null && isExplosionCause(lastDamage.getCause());
+    }
+
+    private boolean isExplosiveAttacker(Entity attacker) {
+        if (attacker instanceof Explosive) {
+            return true;
+        }
+
+        EntityType type = attacker.getType();
+        return type == EntityType.WITHER || type == EntityType.ENDER_DRAGON || type == EntityType.WITHER_SKULL;
+    }
+
+    private void resetVehicleVelocity(Vehicle vehicle) {
+        vehicle.setVelocity(new Vector());
+        vehicle.setFallDistance(0F);
     }
 }
