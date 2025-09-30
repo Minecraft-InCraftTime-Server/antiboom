@@ -43,6 +43,10 @@ public final class RegionProtectionRule {
         return mode;
     }
 
+    public String worldName() {
+        return worldName;
+    }
+
     public boolean contains(Location location) {
         if (location == null) {
             return false;

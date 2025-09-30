@@ -43,6 +43,7 @@ public final class ExplosionSettings {
     private final EntityProtectionRules windChargeProtection;
     private final boolean protectSupportBlocks;
     private final List<RegionProtectionRule> regionProtections;
+    private final Map<String, List<RegionProtectionRule>> regionProtectionsByWorld;
 
     private ExplosionSettings(Map<ExplosionSource, ProtectionMode> explosionModes,
                               EntityProtectionRules explosionProtection,
@@ -54,6 +55,7 @@ public final class ExplosionSettings {
         this.windChargeProtection = windChargeProtection;
         this.protectSupportBlocks = protectSupportBlocks;
         this.regionProtections = List.copyOf(regionProtections);
+        this.regionProtectionsByWorld = Map.copyOf(groupRegionsByWorld(regionProtections));
     }
 
     public static ExplosionSettings fromConfig(FileConfiguration config, Logger logger) {
@@ -113,11 +115,23 @@ public final class ExplosionSettings {
     }
 
     public Optional<ProtectionMode> resolveRegion(Location location) {
-        if (regionProtections.isEmpty()) {
+        if (regionProtections.isEmpty() || location == null) {
             return Optional.empty();
         }
 
-        return regionProtections.stream()
+        String worldName = Optional.ofNullable(location.getWorld())
+                .map(world -> world.getName().toLowerCase(Locale.ROOT))
+                .orElse(null);
+        if (worldName == null) {
+            return Optional.empty();
+        }
+
+        List<RegionProtectionRule> regions = regionProtectionsByWorld.get(worldName);
+        if (regions == null || regions.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return regions.stream()
                 .filter(region -> region.contains(location))
                 .map(RegionProtectionRule::mode)
                 .findFirst();
@@ -262,6 +276,25 @@ public final class ExplosionSettings {
         for (String alias : names) {
             aliases.put(normalizeKey(alias), type);
         }
+    }
+
+    private static Map<String, List<RegionProtectionRule>> groupRegionsByWorld(List<RegionProtectionRule> regions) {
+        if (regions.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<String, List<RegionProtectionRule>> grouped = new HashMap<>();
+        for (RegionProtectionRule region : regions) {
+            String world = region.worldName().toLowerCase(Locale.ROOT);
+            grouped.computeIfAbsent(world, key -> new ArrayList<>()).add(region);
+        }
+
+        Map<String, List<RegionProtectionRule>> immutable = new HashMap<>();
+        for (Map.Entry<String, List<RegionProtectionRule>> entry : grouped.entrySet()) {
+            immutable.put(entry.getKey(), List.copyOf(entry.getValue()));
+        }
+
+        return immutable;
     }
 
     private static String asString(Object value) {
