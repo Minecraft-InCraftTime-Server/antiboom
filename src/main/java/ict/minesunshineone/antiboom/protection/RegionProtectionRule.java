@@ -3,12 +3,8 @@ package ict.minesunshineone.antiboom.protection;
 import ict.minesunshineone.antiboom.ProtectionMode;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.entity.EntityType;
 
 import java.util.Objects;
-import java.util.Set;
-import java.util.Collections;
-import java.util.EnumSet;
 
 /**
  * 定义一个以世界和 XYZ 边界描述的爆炸保护区域。
@@ -23,7 +19,6 @@ public final class RegionProtectionRule {
     private final int minZ;
     private final int maxZ;
     private final ProtectionMode mode;
-    private final Set<EntityType> protectedEntities;
 
     public RegionProtectionRule(String worldName,
                                 int minX,
@@ -32,8 +27,7 @@ public final class RegionProtectionRule {
                                 int maxX,
                                 int maxY,
                                 int maxZ,
-                                ProtectionMode mode,
-                                Set<EntityType> protectedEntities) {
+                                ProtectionMode mode) {
         this.worldName = Objects.requireNonNull(worldName, "worldName");
         this.mode = Objects.requireNonNull(mode, "mode");
 
@@ -43,27 +37,10 @@ public final class RegionProtectionRule {
         this.maxY = Math.max(minY, maxY);
         this.minZ = Math.min(minZ, maxZ);
         this.maxZ = Math.max(minZ, maxZ);
-
-        if (protectedEntities == null || protectedEntities.isEmpty()) {
-            this.protectedEntities = Set.of();
-        } else {
-            this.protectedEntities = Collections.unmodifiableSet(EnumSet.copyOf(protectedEntities));
-        }
     }
 
     public ProtectionMode mode() {
         return mode;
-    }
-
-    public boolean protectsEntity(EntityType type) {
-        if (type == null) {
-            return false;
-        }
-        return protectedEntities.contains(type);
-    }
-
-    public Set<EntityType> protectedEntities() {
-        return protectedEntities;
     }
 
     public boolean contains(Location location) {
@@ -100,7 +77,6 @@ public final class RegionProtectionRule {
                 ", maxY=" + maxY +
                 ", maxZ=" + maxZ +
                 ", mode=" + mode +
-                ", protectedEntities=" + protectedEntities +
                 '}';
     }
 }

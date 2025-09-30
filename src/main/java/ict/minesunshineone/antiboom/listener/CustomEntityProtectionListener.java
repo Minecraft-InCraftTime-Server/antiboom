@@ -128,7 +128,13 @@ public final class CustomEntityProtectionListener implements Listener {
         }
 
         EntityDamageEvent lastDamage = vehicle.getLastDamageCause();
-        return lastDamage != null && isExplosionCause(lastDamage.getCause());
+        if (lastDamage != null && isExplosionCause(lastDamage.getCause())) {
+            return true;
+        }
+
+        // 某些版本在爆炸摧毁载具时不会提供攻击者或最后伤害来源，
+        // 此时依然遵循防护规则，避免误判导致船只被炸毁。
+        return true;
     }
 
     private boolean isExplosiveAttacker(Entity attacker) {

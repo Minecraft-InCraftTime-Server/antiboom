@@ -36,7 +36,7 @@ public final class ExplosionProtectionService {
 
     public void protectExplosion(Entity source,
                                  Location location,
-                                 List<?> affectedBlocks,
+                                 List<Block> affectedBlocks,
                                  Consumer<Float> yieldSetter) {
         filterAttachedSupportBlocks(location, affectedBlocks);
         ProtectionMode mode = resolveMode(source, location);
@@ -100,7 +100,7 @@ public final class ExplosionProtectionService {
 
     private void applyMode(ProtectionMode mode,
                            Location location,
-                           List<?> affectedBlocks,
+                           List<Block> affectedBlocks,
                            Consumer<Float> yieldSetter,
                            Entity source) {
         if (mode == null || !mode.suppressBlocks()) {
@@ -165,7 +165,7 @@ public final class ExplosionProtectionService {
         return builder.build();
     }
 
-    private void filterAttachedSupportBlocks(Location location, List<?> affectedBlocks) {
+    private void filterAttachedSupportBlocks(Location location, List<Block> affectedBlocks) {
         if (affectedBlocks == null || affectedBlocks.isEmpty()) {
             return;
         }
@@ -184,19 +184,16 @@ public final class ExplosionProtectionService {
             return;
         }
 
-        @SuppressWarnings("unchecked")
-        List<Block> blocks = (List<Block>) affectedBlocks;
-
         World world = location != null ? location.getWorld() : null;
-        if (world == null && !blocks.isEmpty()) {
-            world = blocks.get(0).getWorld();
+        if (world == null && !affectedBlocks.isEmpty()) {
+            world = affectedBlocks.get(0).getWorld();
         }
 
         if (world == null) {
             return;
         }
 
-        blocks.removeIf(block -> supportsProtectedHanging(block, rules));
+        affectedBlocks.removeIf(block -> supportsProtectedHanging(block, rules));
     }
 
     private boolean supportsProtectedHanging(Block block, EntityProtectionRules rules) {
@@ -226,7 +223,7 @@ public final class ExplosionProtectionService {
         }
 
         return settings.findRegion(entity.getLocation())
-                .map(region -> region.mode().suppressBlocks() || region.protectsEntity(entity.getType()))
+        .map(region -> region.mode().suppressBlocks())
                 .orElse(false);
     }
 }
