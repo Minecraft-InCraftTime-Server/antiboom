@@ -23,12 +23,6 @@ public final class CreeperExplosionListener implements Listener {
             return;
         }
 
-        var mode = protectionService.protectExplosion(event.getEntity(), event.getLocation(), event.blockList(), event::setYield);
-        if (mode.suppressBlocks() && protectionService.isRegionProtectionActive(event.getLocation())) {
-            event.blockList().clear();
-            event.setYield(0F);
-            event.setCancelled(true);
-            event.getEntity().remove();
-        }
+        protectionService.protectExplosion(event.getEntity(), event.getLocation(), event.blockList(), event::setYield);
     }
 }

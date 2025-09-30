@@ -28,11 +28,6 @@ public final class GhastExplosionListener implements Listener {
             return;
         }
 
-        var mode = protectionService.protectExplosion(event.getEntity(), event.getLocation(), event.blockList(), event::setYield);
-        if (mode.suppressBlocks()) {
-            event.blockList().clear();
-            event.setYield(0F);
-            event.setCancelled(true);
-        }
+        protectionService.protectExplosion(event.getEntity(), event.getLocation(), event.blockList(), event::setYield);
     }
 }
