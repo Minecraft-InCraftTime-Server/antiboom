@@ -66,7 +66,7 @@ public final class ExplosionProtectionService {
             return true;
         }
 
-        return isRegionProtectionActive(entity.getLocation());
+        return isRegionProtectingEntity(entity);
     }
 
     public boolean isRegionProtectionActive(Location location) {
@@ -75,8 +75,8 @@ public final class ExplosionProtectionService {
             return false;
         }
 
-        return settings.resolveRegion(location)
-                .map(ProtectionMode::suppressBlocks)
+        return settings.findRegion(location)
+                .map(region -> region.mode().suppressBlocks())
                 .orElse(false);
     }
 
@@ -217,5 +217,16 @@ public final class ExplosionProtectionService {
     private boolean isProtectedHanging(Hanging hanging, EntityProtectionRules rules) {
         EntityType type = hanging.getType();
         return rules.isProtected(type);
+    }
+
+    private boolean isRegionProtectingEntity(Entity entity) {
+        ExplosionSettings settings = plugin.getSettings();
+        if (settings == null || entity == null) {
+            return false;
+        }
+
+        return settings.findRegion(entity.getLocation())
+                .map(region -> region.mode().suppressBlocks() || region.protectsEntity(entity.getType()))
+                .orElse(false);
     }
 }

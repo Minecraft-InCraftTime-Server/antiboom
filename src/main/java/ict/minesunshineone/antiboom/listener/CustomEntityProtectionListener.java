@@ -35,8 +35,6 @@ public final class CustomEntityProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityDamage(EntityDamageEvent event) {
-        EntityType type = event.getEntityType();
-
         EntityDamageEvent.DamageCause cause = event.getCause();
 
         if (isExplosionCause(cause)) {
@@ -52,7 +50,7 @@ public final class CustomEntityProtectionListener implements Listener {
         if (windChargeProtectionService.isProtectionEnabled()
                 && event instanceof EntityDamageByEntityEvent byEntity
                 && byEntity.getDamager() instanceof WindCharge
-                && windChargeProtectionService.isProtectedEntity(type)) {
+                && windChargeProtectionService.isProtectedEntity(event.getEntity())) {
             event.setCancelled(true);
         }
     }
@@ -72,7 +70,7 @@ public final class CustomEntityProtectionListener implements Listener {
         if (cause == RemoveCause.ENTITY && event instanceof HangingBreakByEntityEvent byEntity) {
             if (byEntity.getRemover() instanceof WindCharge || byEntity.getRemover() instanceof Breeze) {
                 if (windChargeProtectionService.isProtectionEnabled()
-                        && windChargeProtectionService.isProtectedEntity(type)) {
+                        && windChargeProtectionService.isProtectedEntity(event.getEntity())) {
                     event.setCancelled(true);
                     return;
                 }
@@ -80,7 +78,7 @@ public final class CustomEntityProtectionListener implements Listener {
                 // Wind Charge also pushes without removing cause when item frame is empty; ensure protection applies.
                 if (type == EntityType.ITEM_FRAME || type == EntityType.GLOW_ITEM_FRAME) {
                     if (windChargeProtectionService.isProtectionEnabled()
-                            && windChargeProtectionService.isProtectedEntity(type)) {
+                            && windChargeProtectionService.isProtectedEntity(event.getEntity())) {
                         event.setCancelled(true);
                     }
                 }
