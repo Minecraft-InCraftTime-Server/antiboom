@@ -23,6 +23,11 @@ public final class CreeperExplosionListener implements Listener {
             return;
         }
 
+        if (protectionService.suppressRegionExplosiveEntity(event.getEntity(), event.getLocation())) {
+            event.setCancelled(true);
+            return;
+        }
+
         protectionService.protectExplosion(event.getEntity(), event.getLocation(), event.blockList(), event::setYield);
     }
 }

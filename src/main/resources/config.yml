@@ -33,6 +33,7 @@ explosion-protection:
   #       y: 80
   #       z: 16
   #     mode: protect
+  # 区域启用 protect/firework 时，区域内激活的 TNT、TNT 矿车与苦力怕会在爆炸前被移除，床导致的爆炸会被取消，不会影响方块。
 
 wind-charge-protection:
   enabled: true

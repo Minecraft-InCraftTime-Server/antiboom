@@ -2,6 +2,7 @@ package ict.minesunshineone.antiboom.listener;
 
 import ict.minesunshineone.antiboom.service.ExplosionProtectionService;
 import org.bukkit.Location;
+import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -31,6 +32,11 @@ public final class GenericExplosionListener implements Listener {
             return;
         }
 
+        if (protectionService.suppressRegionExplosiveEntity(entity, event.getLocation())) {
+            event.setCancelled(true);
+            return;
+        }
+
         if (entity.getType() == EntityType.CREEPER || entity.getType() == EntityType.ENDER_DRAGON) {
             return;
         }
@@ -46,6 +52,16 @@ public final class GenericExplosionListener implements Listener {
     public void onBlockExplode(BlockExplodeEvent event) {
         Block block = event.getBlock();
         Location location = block != null ? block.getLocation() : null;
+
+        if (block != null && isBed(block) && protectionService.suppressRegionBlockExplosion(location)) {
+            event.setCancelled(true);
+            return;
+        }
+
         protectionService.protectExplosion(null, location, event.blockList(), event::setYield);
+    }
+
+    private boolean isBed(Block block) {
+        return Tag.BEDS.isTagged(block.getType());
     }
 }
