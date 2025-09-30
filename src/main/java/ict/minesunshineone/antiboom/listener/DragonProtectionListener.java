@@ -24,7 +24,10 @@ public final class DragonProtectionListener implements Listener {
             return;
         }
 
-        protectionService.protectExplosion(event.getEntity(), event.getLocation(), event.blockList(), event::setYield);
+        var mode = protectionService.protectExplosion(event.getEntity(), event.getLocation(), event.blockList(), event::setYield);
+        if (mode.suppressBlocks()) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)

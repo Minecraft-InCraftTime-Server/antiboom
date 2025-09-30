@@ -7,6 +7,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fireball;
 import org.bukkit.entity.Ghast;
+import org.bukkit.entity.TNTPrimed;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -27,7 +28,12 @@ public final class GenericExplosionListener implements Listener {
     public void onEntityExplode(EntityExplodeEvent event) {
         Entity entity = event.getEntity();
         if (entity == null) {
-            protectionService.protectExplosion(null, event.getLocation(), event.blockList(), event::setYield);
+            var mode = protectionService.protectExplosion(null, event.getLocation(), event.blockList(), event::setYield);
+            if (mode.suppressBlocks()) {
+                event.blockList().clear();
+                event.setYield(0F);
+                event.setCancelled(true);
+            }
             return;
         }
 
@@ -39,13 +45,28 @@ public final class GenericExplosionListener implements Listener {
             return;
         }
 
-        protectionService.protectExplosion(entity, event.getLocation(), event.blockList(), event::setYield);
+        var mode = protectionService.protectExplosion(entity, event.getLocation(), event.blockList(), event::setYield);
+        if (mode.suppressBlocks()) {
+            boolean isExplosiveVehicle = entity.getType() == EntityType.TNT_MINECART;
+            if (protectionService.isRegionProtectionActive(event.getLocation())
+                    && (entity instanceof TNTPrimed || isExplosiveVehicle)) {
+                entity.remove();
+            }
+            event.blockList().clear();
+            event.setYield(0F);
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockExplode(BlockExplodeEvent event) {
         Block block = event.getBlock();
         Location location = block != null ? block.getLocation() : null;
-        protectionService.protectExplosion(null, location, event.blockList(), event::setYield);
+        var mode = protectionService.protectExplosion(null, location, event.blockList(), event::setYield);
+        if (mode.suppressBlocks()) {
+            event.blockList().clear();
+            event.setYield(0F);
+            event.setCancelled(true);
+        }
     }
 }

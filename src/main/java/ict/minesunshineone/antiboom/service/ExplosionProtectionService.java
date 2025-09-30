@@ -34,13 +34,14 @@ public final class ExplosionProtectionService {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
     }
 
-    public void protectExplosion(Entity source,
-                                 Location location,
-                                 List<Block> affectedBlocks,
-                                 Consumer<Float> yieldSetter) {
+    public ProtectionMode protectExplosion(Entity source,
+                                           Location location,
+                                           List<Block> affectedBlocks,
+                                           Consumer<Float> yieldSetter) {
         filterAttachedSupportBlocks(location, affectedBlocks);
         ProtectionMode mode = resolveMode(source, location);
         applyMode(mode, location, affectedBlocks, yieldSetter, source);
+        return mode;
     }
 
     public ProtectionMode resolveMode(Entity source) {
