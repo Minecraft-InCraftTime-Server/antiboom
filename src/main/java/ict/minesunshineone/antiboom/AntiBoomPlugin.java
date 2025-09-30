@@ -5,6 +5,7 @@ import ict.minesunshineone.antiboom.listener.CustomEntityProtectionListener;
 import ict.minesunshineone.antiboom.listener.DragonProtectionListener;
 import ict.minesunshineone.antiboom.listener.GenericExplosionListener;
 import ict.minesunshineone.antiboom.listener.GhastExplosionListener;
+import ict.minesunshineone.antiboom.listener.RegionExplosionPrimeListener;
 import ict.minesunshineone.antiboom.service.ExplosionProtectionService;
 import ict.minesunshineone.antiboom.service.WindChargeProtectionService;
 import org.bukkit.command.Command;
@@ -51,6 +52,7 @@ public final class AntiBoomPlugin extends JavaPlugin {
         pluginManager.registerEvents(new DragonProtectionListener(explosionProtectionService), this);
         pluginManager.registerEvents(new GenericExplosionListener(explosionProtectionService), this);
         pluginManager.registerEvents(new CustomEntityProtectionListener(explosionProtectionService, windChargeProtectionService), this);
+        pluginManager.registerEvents(new RegionExplosionPrimeListener(explosionProtectionService), this);
     }
 
     public ExplosionSettings getSettings() {

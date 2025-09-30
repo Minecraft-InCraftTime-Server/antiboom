@@ -1,6 +1,8 @@
 package ict.minesunshineone.antiboom;
 
 import ict.minesunshineone.antiboom.protection.EntityProtectionRules;
+import ict.minesunshineone.antiboom.protection.RegionProtectionRule;
+import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Creeper;
@@ -10,6 +12,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fireball;
 import org.bukkit.entity.Ghast;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -18,6 +21,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.List;
 import java.util.logging.Logger;
 
 public final class ExplosionSettings {
@@ -38,15 +42,20 @@ public final class ExplosionSettings {
     private final EntityProtectionRules explosionProtection;
     private final EntityProtectionRules windChargeProtection;
     private final boolean protectSupportBlocks;
+    private final List<RegionProtectionRule> regionProtections;
+    private final Map<String, List<RegionProtectionRule>> regionProtectionsByWorld;
 
     private ExplosionSettings(Map<ExplosionSource, ProtectionMode> explosionModes,
                               EntityProtectionRules explosionProtection,
                               EntityProtectionRules windChargeProtection,
-                              boolean protectSupportBlocks) {
+                              boolean protectSupportBlocks,
+                              List<RegionProtectionRule> regionProtections) {
         this.explosionModes = new EnumMap<>(explosionModes);
         this.explosionProtection = explosionProtection;
         this.windChargeProtection = windChargeProtection;
         this.protectSupportBlocks = protectSupportBlocks;
+        this.regionProtections = List.copyOf(regionProtections);
+        this.regionProtectionsByWorld = Map.copyOf(groupRegionsByWorld(regionProtections));
     }
 
     public static ExplosionSettings fromConfig(FileConfiguration config, Logger logger) {
@@ -54,6 +63,7 @@ public final class ExplosionSettings {
         boolean explosionEnabled = config.getBoolean("explosion-protection.enabled", true);
         Map<EntityType, Boolean> explosionProtection = loadEntityProtection(config.getConfigurationSection("explosion-protection.entities"));
         boolean protectSupportBlocks = config.getBoolean("explosion-protection.protect-support-blocks", true);
+        List<RegionProtectionRule> regionProtections = loadRegionProtections(config, logger);
 
         boolean windEnabled = config.getBoolean("wind-charge-protection.enabled", true);
         Map<EntityType, Boolean> windProtection = loadEntityProtection(config.getConfigurationSection("wind-charge-protection.entities"));
@@ -61,7 +71,7 @@ public final class ExplosionSettings {
         EntityProtectionRules explosionRules = new EntityProtectionRules(explosionEnabled, explosionProtection, DEFAULT_PROTECTED_ENTITIES);
         EntityProtectionRules windRules = new EntityProtectionRules(windEnabled, windProtection, DEFAULT_PROTECTED_ENTITIES);
 
-        return new ExplosionSettings(explosionModes, explosionRules, windRules, protectSupportBlocks);
+        return new ExplosionSettings(explosionModes, explosionRules, windRules, protectSupportBlocks, regionProtections);
     }
 
     public ProtectionMode resolveMode(Entity source) {
@@ -102,6 +112,29 @@ public final class ExplosionSettings {
 
     public boolean protectSupportBlocks() {
         return protectSupportBlocks;
+    }
+
+    public Optional<ProtectionMode> resolveRegion(Location location) {
+        if (regionProtections.isEmpty() || location == null) {
+            return Optional.empty();
+        }
+
+        String worldName = Optional.ofNullable(location.getWorld())
+                .map(world -> world.getName().toLowerCase(Locale.ROOT))
+                .orElse(null);
+        if (worldName == null) {
+            return Optional.empty();
+        }
+
+        List<RegionProtectionRule> regions = regionProtectionsByWorld.get(worldName);
+        if (regions == null || regions.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return regions.stream()
+                .filter(region -> region.contains(location))
+                .map(RegionProtectionRule::mode)
+                .findFirst();
     }
 
     private static Map<ExplosionSource, ProtectionMode> loadExplosionModes(FileConfiguration config, Logger logger) {
@@ -145,6 +178,55 @@ public final class ExplosionSettings {
         }
 
         return values;
+    }
+
+    private static List<RegionProtectionRule> loadRegionProtections(FileConfiguration config, Logger logger) {
+        List<Map<?, ?>> entries = config.getMapList("explosion-protection.xyz-regions");
+        if (entries.isEmpty()) {
+            return List.of();
+        }
+
+        List<RegionProtectionRule> regions = new ArrayList<>();
+        int index = 0;
+        for (Map<?, ?> raw : entries) {
+            String path = "explosion-protection.xyz-regions[" + index + "]";
+            index++;
+            if (raw == null) {
+                continue;
+            }
+
+            String world = asString(raw.get("world"));
+            if (world == null || world.isBlank()) {
+                log(logger, "Skipped " + path + " because 'world' is missing or blank.");
+                continue;
+            }
+
+            Map<?, ?> min = asMap(raw.get("min"));
+            Map<?, ?> max = asMap(raw.get("max"));
+            if (min == null || max == null) {
+                log(logger, "Skipped " + path + " because 'min' or 'max' is missing.");
+                continue;
+            }
+
+            Integer minX = asInt(min.get("x"));
+            Integer minY = asInt(min.get("y"));
+            Integer minZ = asInt(min.get("z"));
+            Integer maxX = asInt(max.get("x"));
+            Integer maxY = asInt(max.get("y"));
+            Integer maxZ = asInt(max.get("z"));
+
+            if (minX == null || minY == null || minZ == null || maxX == null || maxY == null || maxZ == null) {
+                log(logger, "Skipped " + path + " because some coordinates are missing or invalid.");
+                continue;
+            }
+
+            String modeValue = asString(raw.get("mode"));
+            ProtectionMode mode = ProtectionMode.fromConfigValue(modeValue, ProtectionMode.PROTECT, logger, path + ".mode");
+
+            regions.add(new RegionProtectionRule(world.trim(), minX, minY, minZ, maxX, maxY, maxZ, mode));
+        }
+
+        return List.copyOf(regions);
     }
 
     private static EntityType resolveEntityType(String key) {
@@ -193,6 +275,59 @@ public final class ExplosionSettings {
     private static void registerAliases(Map<String, EntityType> aliases, EntityType type, String... names) {
         for (String alias : names) {
             aliases.put(normalizeKey(alias), type);
+        }
+    }
+
+    private static Map<String, List<RegionProtectionRule>> groupRegionsByWorld(List<RegionProtectionRule> regions) {
+        if (regions.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<String, List<RegionProtectionRule>> grouped = new HashMap<>();
+        for (RegionProtectionRule region : regions) {
+            String world = region.worldName().toLowerCase(Locale.ROOT);
+            grouped.computeIfAbsent(world, key -> new ArrayList<>()).add(region);
+        }
+
+        Map<String, List<RegionProtectionRule>> immutable = new HashMap<>();
+        for (Map.Entry<String, List<RegionProtectionRule>> entry : grouped.entrySet()) {
+            immutable.put(entry.getKey(), List.copyOf(entry.getValue()));
+        }
+
+        return immutable;
+    }
+
+    private static String asString(Object value) {
+        if (value instanceof String string) {
+            return string;
+        }
+        return null;
+    }
+
+    private static Map<?, ?> asMap(Object value) {
+        if (value instanceof Map<?, ?> map) {
+            return map;
+        }
+        return null;
+    }
+
+    private static Integer asInt(Object value) {
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        if (value instanceof String string) {
+            try {
+                return Integer.parseInt(string.trim());
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    private static void log(Logger logger, String message) {
+        if (logger != null) {
+            logger.warning(message);
         }
     }
 

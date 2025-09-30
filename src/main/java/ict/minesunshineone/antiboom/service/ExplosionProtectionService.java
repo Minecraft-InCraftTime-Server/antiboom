@@ -39,17 +39,71 @@ public final class ExplosionProtectionService {
                                  List<?> affectedBlocks,
                                  Consumer<Float> yieldSetter) {
         filterAttachedSupportBlocks(location, affectedBlocks);
-        ProtectionMode mode = resolveMode(source);
+        ProtectionMode mode = resolveMode(source, location);
         applyMode(mode, location, affectedBlocks, yieldSetter, source);
     }
 
     public ProtectionMode resolveMode(Entity source) {
+        return resolveMode(source, null);
+    }
+
+    public ProtectionMode resolveMode(Entity source, Location location) {
         ExplosionSettings settings = plugin.getSettings();
         if (settings == null) {
             return ProtectionMode.ALLOW;
         }
 
-        return settings.resolveMode(source);
+        ProtectionMode baseMode = settings.resolveMode(source);
+        return settings.resolveRegion(location).orElse(baseMode);
+    }
+
+    public boolean suppressRegionExplosiveEntity(Entity entity, Location location) {
+        if (entity == null || location == null) {
+            return false;
+        }
+
+        ExplosionSettings settings = plugin.getSettings();
+        if (settings == null) {
+            return false;
+        }
+
+        ProtectionMode mode = settings.resolveRegion(location).orElse(null);
+        if (mode == null || !mode.suppressBlocks()) {
+            return false;
+        }
+
+        if (!isRegionExplosiveEntity(entity.getType())) {
+            return false;
+        }
+
+        if (mode.spawnFirework()) {
+            spawnFirework(location, entity);
+        }
+
+        entity.remove();
+        return true;
+    }
+
+    public boolean suppressRegionBlockExplosion(Location location) {
+        if (location == null) {
+            return false;
+        }
+
+        ExplosionSettings settings = plugin.getSettings();
+        if (settings == null) {
+            return false;
+        }
+
+        ProtectionMode mode = settings.resolveRegion(location).orElse(null);
+        if (mode == null || !mode.suppressBlocks()) {
+            return false;
+        }
+
+        if (mode.spawnFirework()) {
+            spawnFirework(location, null);
+        }
+
+        return true;
     }
 
     public boolean isExplosionProtectionEnabled() {
@@ -189,5 +243,11 @@ public final class ExplosionProtectionService {
     private boolean isProtectedHanging(Hanging hanging, EntityProtectionRules rules) {
         EntityType type = hanging.getType();
         return rules.isProtected(type);
+    }
+
+    private boolean isRegionExplosiveEntity(EntityType type) {
+        return type == EntityType.CREEPER
+                || type == EntityType.TNT
+                || type == EntityType.TNT_MINECART;
     }
 }
