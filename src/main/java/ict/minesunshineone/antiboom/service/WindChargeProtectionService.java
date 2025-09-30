@@ -3,10 +3,7 @@ package ict.minesunshineone.antiboom.service;
 import ict.minesunshineone.antiboom.AntiBoomPlugin;
 import ict.minesunshineone.antiboom.ExplosionSettings;
 import ict.minesunshineone.antiboom.protection.EntityProtectionRules;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.ItemFrame;
-import org.bukkit.inventory.ItemStack;
 
 import java.util.Objects;
 
@@ -31,10 +28,6 @@ public final class WindChargeProtectionService {
     }
 
     public boolean isProtectedEntity(EntityType type) {
-        if (type == null) {
-            return false;
-        }
-
         ExplosionSettings settings = plugin.getSettings();
         if (settings == null) {
             return false;
@@ -42,29 +35,5 @@ public final class WindChargeProtectionService {
 
         EntityProtectionRules rules = settings.windChargeEntityRules();
         return rules.isProtected(type);
-    }
-
-    public boolean isProtectedEntity(Entity entity) {
-        if (entity == null) {
-            return false;
-        }
-
-        ExplosionSettings settings = plugin.getSettings();
-        if (settings == null) {
-            return false;
-        }
-
-        EntityProtectionRules rules = settings.windChargeEntityRules();
-        EntityType type = entity.getType();
-        if (!rules.isProtected(type)) {
-            return false;
-        }
-
-        if (entity instanceof ItemFrame frame) {
-            ItemStack item = frame.getItem();
-            return item != null && !item.getType().isAir();
-        }
-
-        return true;
     }
 }
